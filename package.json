@@ -1,0 +1,17 @@
+{
+  "name": "jobs24india-social",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Hindi carousel posting bot for Jobs24India — Instagram + Facebook Page via the Graph API",
+  "type": "commonjs",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "post:blog": "node poster/post.js blog-carousel",
+    "gen:carousel": "node generators/generate-carousel.js",
+    "dry-run": "DRY_RUN=1 node poster/post.js blog-carousel",
+    "refresh-token": "node poster/refresh-token.js"
+  },
+  "dependencies": {
+    "playwright": "1.49.0"
+  }
+}

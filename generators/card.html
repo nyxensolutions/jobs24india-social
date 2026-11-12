@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<title>card</title>
+<!--
+  One carousel slide, rendered at exactly 1080×1350 (Instagram's 4:5 portrait).
+
+  Every size inside the card is expressed in `cqw` against a container that is
+  exactly the card's width, so this file is resolution-independent: it was
+  designed and approved in a browser at 262px wide and renders identically at
+  1080px here. Do not reintroduce px sizes for type or spacing — they would
+  look correct in the preview and wrong in the published PNG.
+
+  The generator injects `window.__SLIDE__` before load. There is no fallback
+  content on purpose: a card that renders with placeholder text is worse than a
+  card that fails loudly, because the placeholder would get published.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700;800;900&display=swap">
+<style>
+  :root {
+    --navy: #1a3461;
+    --orange: #f97316;
+    --money: #0f6b38;
+    --counter: #c2410c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #ffffff; }
+  body {
+    width: 1080px; height: 1350px; overflow: hidden;
+    /* The apt package installs "Noto Sans Devanagari" under this exact name;
+       the webfont above is the belt-and-braces copy for a runner without it.
+       If both are missing every glyph renders as a tofu box, which is why the
+       generator asserts on glyph width before it screenshots. */
+    font-family: "Noto Sans Devanagari", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .card {
+    container-type: inline-size;
+    width: 1080px; height: 1350px;
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+    background: #ffffff; color: #16202e;
+  }
+  .card.is-navy {
+    background:
+      radial-gradient(120% 90% at 110% -10%, #24427a 0%, rgba(36,66,122,0) 58%),
+      var(--navy);
+    color: #ffffff;
+  }
+
+  .ring {
+    position: absolute; border-radius: 50%; pointer-events: none;
+    border: 3.4cqw solid var(--orange);
+  }
+  /* Tucked into the bottom-right corner, clear of the text block above it. At
+     1080px the second ring sat directly behind the hook line — invisible in a
+     262px preview, obvious at full size. One ring, placed low, is enough. */
+  .card.is-navy .ring-a { width: 62cqw; height: 62cqw; right: -26cqw; bottom: -28cqw; opacity: .42; }
+  .card .ring-a { width: 58cqw; height: 58cqw; right: -24cqw; bottom: -26cqw; opacity: .13; border-color: var(--orange); }
+
+  .card-top {
+    position: relative; z-index: 2;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 3cqw; padding: 6.5cqw 7cqw 0;
+  }
+  .wordmark { height: 7.6cqw; width: auto; display: block; }
+  .wordmark.lg { height: 9.4cqw; }
+  .count {
+    font-size: 3.5cqw; font-weight: 800; letter-spacing: .06em;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+    padding: 1.2cqw 2.6cqw; border-radius: 99cqw;
+  }
+  .card .count { color: #5f6b7a; background: #eef1f5; }
+  .card.is-navy .count { color: #ffd9bd; background: rgba(249,115,22,.22); }
+
+  .eyebrow {
+    position: relative; z-index: 2;
+    margin: 3.4cqw 7cqw 0; align-self: flex-start;
+    font-size: 3.3cqw; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+    padding: 1.4cqw 3cqw; border-radius: 1.4cqw;
+    background: var(--orange); color: #ffffff;
+  }
+
+  .card-body {
+    position: relative; z-index: 2;
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column; justify-content: center;
+    gap: 3cqw; padding: 4cqw 7cqw;
+  }
+  .icon { font-size: 11cqw; line-height: 1; }
+
+  .hook { font-size: 8.6cqw; font-weight: 800; line-height: 1.3; letter-spacing: -0.008em; text-wrap: balance; }
+  .cta-text { font-size: 8.8cqw; font-weight: 900; line-height: 1.26; }
+  .cta-sub { font-size: 4.4cqw; font-weight: 600; line-height: 1.45; color: #bcd0ef; margin-top: 1cqw; }
+
+  .fact-label { font-size: 5.3cqw; font-weight: 700; line-height: 1.34; color: #2c3a4c; text-wrap: balance; }
+  .pairs { display: flex; flex-direction: column; gap: 3.4cqw; }
+  .pair { display: flex; flex-direction: column; gap: .8cqw; }
+  .pair-key { font-size: 3.9cqw; font-weight: 700; color: #707c8b; letter-spacing: .03em; }
+  .pair-val { font-size: 10.2cqw; font-weight: 900; line-height: 1.14; color: var(--money); letter-spacing: -0.015em; }
+  .pair-val.is-plain { color: #16202e; font-size: 6.2cqw; font-weight: 800; line-height: 1.3; }
+  .pair.is-counter .pair-val { color: var(--counter); }
+  .pair.is-counter .pair-key { color: var(--counter); opacity: .8; }
+
+  .card-foot {
+    position: relative; z-index: 2;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 3cqw; padding: 0 7cqw 6.5cqw;
+    font-size: 3.4cqw; font-weight: 700;
+  }
+  .card .foot-url { color: #8794a4; }
+  .card.is-navy .foot-url { color: #a9c0e4; }
+  .foot-bar { height: 1.1cqw; flex: 1; border-radius: 99cqw; background: var(--orange); opacity: .9; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+
+  function logo(onNavy, large) {
+    const img = document.createElement("img");
+    img.className = "wordmark" + (large ? " lg" : "");
+    // Light wordmark on navy, navy wordmark on white — both shipped in assets/.
+    img.src = onNavy ? "../assets/logo-light.png" : "../assets/logo-navy.png";
+    img.alt = "Jobs24India";
+    return img;
+  }
+
+  // Splits the endpoint's slide string into label + key/value pairs:
+  //   "फुल-टाइम (9–10 घंटे) — कुल कमाई: ₹24,000 – ₹34,000"
+  function renderFact(body, text) {
+    const emDash = text.indexOf(" — ");
+    const label = emDash === -1 ? text : text.slice(0, emDash);
+    const rest = emDash === -1 ? "" : text.slice(emDash + 3);
+
+    body.append(el("div", "fact-label", label));
+    if (!rest) return;
+
+    const chunks = rest.split(" · ");
+    const pairs = el("div", "pairs");
+    chunks.forEach((chunk, i) => {
+      const colon = chunk.indexOf(": ");
+      // Two values means the slide is a comparison, and the second is the
+      // claim being argued against — the scammer's number, not ours.
+      const pair = el("div", "pair" + (chunks.length === 2 && i === 1 ? " is-counter" : ""));
+      const value = colon === -1 ? chunk : chunk.slice(colon + 2);
+      if (colon !== -1) pair.append(el("div", "pair-key", chunk.slice(0, colon)));
+      const v = el("div", "pair-val", value);
+      if (!value.includes("₹")) v.classList.add("is-plain");
+      pair.append(v);
+      pairs.append(pair);
+    });
+    body.append(pairs);
+  }
+
+  function render(slide, meta) {
+    const navy = slide.kind !== "fact";
+    const card = el("div", "card" + (navy ? " is-navy" : ""));
+
+    card.append(el("div", "ring ring-a"));
+
+    const top = el("div", "card-top");
+    top.append(logo(navy, slide.kind === "cta"));
+    top.append(el("span", "count", meta.index + " / " + meta.total));
+    card.append(top);
+
+    card.append(el("span", "eyebrow", meta.tag));
+
+    const body = el("div", "card-body");
+    body.append(el("div", "icon", slide.icon));
+    if (slide.kind === "fact") {
+      renderFact(body, slide.text);
+    } else {
+      body.append(el("div", slide.kind === "cta" ? "cta-text" : "hook", slide.text));
+      if (slide.kind === "cta") {
+        body.append(el("div", "cta-sub", "मुफ्त में नौकरी खोजें · jobs24india.com"));
+      }
+    }
+    card.append(body);
+
+    const foot = el("div", "card-foot");
+    foot.append(el("span", "foot-url", "jobs24india.com"));
+    foot.append(el("span", "foot-bar"));
+    card.append(foot);
+
+    document.getElementById("root").append(card);
+  }
+
+  if (!window.__SLIDE__) {
+    document.title = "ERROR: no slide injected";
+    throw new Error("card.html opened without window.__SLIDE__");
+  }
+  render(window.__SLIDE__.slide, window.__SLIDE__.meta);
+</script>
+</body>
+</html>
