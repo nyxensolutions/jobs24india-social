@@ -46,11 +46,21 @@ jobs:
       # Without this every Hindi glyph renders as a tofu box. The generator
       # asserts on glyph width and fails loudly rather than publishing them,
       # but installing the font is what actually prevents it.
+      #
+      # Noto Sans Devanagari lives in fonts-noto-core. There is no
+      # "fonts-noto-devanagari" package — asking for one fails the whole
+      # apt-get call, which is how run #1 died before rendering anything.
+      # fonts-noto-color-emoji is separate and is what draws 💰 and 👇 in
+      # colour rather than as outlines.
       - name: Install Devanagari fonts
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq fonts-noto-devanagari fonts-noto-color-emoji
+          sudo apt-get install -y -qq fonts-noto-core fonts-noto-color-emoji
           fc-cache -f
+          # Prove the family is actually present before 300 seconds of
+          # rendering depend on it.
+          fc-list | grep -i "devanagari" | head -3
+          fc-list | grep -qi "devanagari"
 
       - name: Post carousel
         env:
