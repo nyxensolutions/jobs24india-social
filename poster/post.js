@@ -16,7 +16,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
-const { postCarousel } = require("./lib/graph");
+const { postCarousel, postImage } = require("./lib/graph");
 const { postPhotoSet } = require("./lib/facebook");
 const { alreadyPosted, record } = require("./lib/state");
 const { istDateString } = require("./lib/dateist");
@@ -27,6 +27,9 @@ const SLOT = process.argv[2];
 const SLUG_ARG = process.argv[3];
 const DRY = process.env.DRY_RUN === "1";
 
+/** The slot decides the shape; everything downstream reads this. */
+const FORMAT = SLOT === "blog-onepager" ? "onepager" : "carousel";
+
 const REPO_OWNER = process.env.GITHUB_REPOSITORY_OWNER || "nyxensolutions";
 const REPO_NAME = (process.env.GITHUB_REPOSITORY || "nyxensolutions/jobs24india-social").split("/").pop();
 const BRANCH = process.env.GITHUB_REF_NAME || "main";
@@ -35,17 +38,37 @@ const RAW = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRAN
 const log = msg => console.log(`[${SLOT}] ${msg}`);
 const fail = msg => { console.error(`[${SLOT}] ERROR: ${msg}`); process.exit(1); };
 
-if (SLOT !== "blog-carousel") fail(`unknown slot "${SLOT}". Expected "blog-carousel".`);
+if (SLOT !== "blog-carousel" && SLOT !== "blog-onepager") {
+  fail(`unknown slot "${SLOT}". Expected "blog-carousel" or "blog-onepager".`);
+}
+
+/** Hands a flag back to the workflow, which decides whether to raise an issue. */
+function setOutput(key, value) {
+  if (process.env.GITHUB_OUTPUT) {
+    fs.appendFileSync(process.env.GITHUB_OUTPUT, `${key}=${value}\n`);
+  }
+}
 
 function generate() {
-  const args = SLUG_ARG ? ` ${SLUG_ARG}` : "";
   const res = require("child_process").spawnSync(
     process.execPath,
-    ["generators/generate-carousel.js", ...(SLUG_ARG ? [SLUG_ARG] : [])],
+    [
+      "generators/generate-carousel.js",
+      "--format", FORMAT,
+      ...(SLUG_ARG ? [SLUG_ARG] : []),
+    ],
     { cwd: ROOT, stdio: "inherit" },
   );
-  // 78 is the generator's "nothing to post today" exit — a skipped slot is a
-  // normal outcome, not a failure, and must not open an issue.
+  // 77: the rotation is out of material. Every future run will say the same
+  // thing, so the workflow raises an issue — otherwise the account goes quiet
+  // and looks exactly like one that is working.
+  if (res.status === 77) {
+    log(`${FORMAT} rotation is exhausted — flagging for an issue`);
+    setOutput("exhausted", "true");
+    setOutput("format", FORMAT);
+    process.exit(0);
+  }
+  // 78: nothing today, but there will be something tomorrow. Normal.
   if (res.status === 78) {
     log("nothing to post today — exiting clean");
     process.exit(0);
@@ -103,18 +126,22 @@ async function main() {
     return;
   }
 
-  const igId = await postCarousel({ imageUrls, caption: igCaption });
+  // A one-pager is a single image; the carousel endpoint rejects fewer than
+  // two children, so the call itself differs rather than just the payload.
+  const igId = imageUrls.length === 1
+    ? await postImage({ imageUrl: imageUrls[0], caption: igCaption })
+    : await postCarousel({ imageUrls, caption: igCaption });
   log(`instagram published ${igId}`);
 
   // Facebook failing must not lose the Instagram post that already succeeded,
   // so it is recorded before the Page call and the error is reported after.
-  record({ slotKey, slug: manifest.slug, instagram: igId, network: "instagram" });
+  record({ slotKey, slug: manifest.slug, format: FORMAT, instagram: igId, network: "instagram" });
 
   let fbId = null;
   try {
     fbId = await postPhotoSet({ imageUrls, caption: fbCaption });
     log(`facebook published ${fbId}`);
-    record({ slotKey: slotKey + "-fb", slug: manifest.slug, facebook: fbId, network: "facebook" });
+    record({ slotKey: slotKey + "-fb", slug: manifest.slug, format: FORMAT, facebook: fbId, network: "facebook" });
   } catch (err) {
     console.error(`[${SLOT}] facebook failed after Instagram succeeded: ${err.message}`);
     process.exitCode = 1;

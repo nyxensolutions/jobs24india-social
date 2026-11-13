@@ -26,13 +26,16 @@ function need(name) {
   return v;
 }
 
-async function fetchCarousel(slug) {
+async function fetchCarousel(slug, format) {
   const base = process.env.SITE_URL || "https://www.jobs24india.com";
   const url = new URL("/api/social/blog", base);
+  url.searchParams.set("format", format);
   if (slug) url.searchParams.set("slug", slug);
   else {
-    // The rotation's memory lives in state/posted.json, not on the server.
-    const posted = loadPostedSlugs();
+    // The rotation's memory lives in state/posted.json, not on the server, and
+    // is kept per format: an article already used as a carousel is still
+    // available as a one-pager, which is where the extra runway comes from.
+    const posted = loadPostedSlugs(format);
     if (posted.length) url.searchParams.set("exclude", posted.join(","));
   }
 
@@ -44,13 +47,15 @@ async function fetchCarousel(slug) {
   return body;
 }
 
-function loadPostedSlugs() {
+function loadPostedSlugs(format) {
   const p = path.join(ROOT, "state", "posted.json");
   if (!fs.existsSync(p)) return [];
   try {
-    return JSON.parse(fs.readFileSync(p, "utf8"))
-      .filter(r => r.slug)
-      .map(r => r.slug);
+    const rows = JSON.parse(fs.readFileSync(p, "utf8")).filter(r => r.slug);
+    // Rows written before formats existed have no `format` and were all
+    // carousels; treating them as such keeps the first rotation honest.
+    const seen = rows.filter(r => (r.format ?? "carousel") === format).map(r => r.slug);
+    return [...new Set(seen)];
   } catch {
     return [];
   }
@@ -97,7 +102,9 @@ async function assertDevanagari(page) {
  */
 async function assertNoOverflow(page, label) {
   const box = await page.evaluate(() => {
-    const body = document.querySelector(".card-body");
+    // A one-pager has .split-body instead; both are the text container that
+    // must stay inside the card.
+    const body = document.querySelector(".card-body, .split-body");
     const card = document.querySelector(".card");
     const bodyRect = body.getBoundingClientRect();
     const cardRect = card.getBoundingClientRect();
@@ -120,18 +127,33 @@ async function assertNoOverflow(page, label) {
 }
 
 async function main() {
-  const slugArg = process.argv[2];
-  const payload = await fetchCarousel(slugArg);
+  const args = process.argv.slice(2);
+  const fmtIdx = args.indexOf("--format");
+  const format = fmtIdx === -1 ? "carousel" : args[fmtIdx + 1];
+  if (format !== "carousel" && format !== "onepager") {
+    throw new Error(`--format must be "carousel" or "onepager", got "${format}"`);
+  }
+  // Skip the value that belongs to --format, but only when --format was given:
+  // with fmtIdx === -1 the guard would drop argv[0], which is the slug, and
+  // the run would quietly render a different article than the one asked for.
+  const formatValueIdx = fmtIdx === -1 ? -1 : fmtIdx + 1;
+  const slugArg = args.filter((a, i) => !a.startsWith("--") && i !== formatValueIdx)[0];
+
+  const payload = await fetchCarousel(slugArg, format);
 
   if (!payload.ready) {
-    // A skipped slot is a signal, not an error: say why and exit clean so the
-    // workflow does not open an issue for "there was nothing to post".
     console.log(`[generate] nothing to post — ${payload.skipReason}`);
-    process.exit(78); // EX_TEMPFAIL-ish; the workflow treats this as "skip"
+    // Two different silences. "Nothing today" is normal and exits clean. But a
+    // rotation that has run out looks identical from the outside and would
+    // simply go quiet for ever, so it gets its own code and the workflow
+    // raises an issue — see the exhausted-rotation step.
+    process.exit(payload.exhausted ? 77 : 78);
   }
 
   const { carousel } = payload;
-  const outDir = path.join(ROOT, "content", carousel.slug);
+  // One-pagers and carousels of the same article must not overwrite each
+  // other's PNGs, so the format is part of the path.
+  const outDir = path.join(ROOT, "content", format === "onepager" ? `${carousel.slug}-onepager` : carousel.slug);
   fs.mkdirSync(outDir, { recursive: true });
 
   const browser = await chromium.launch();
@@ -167,6 +189,7 @@ async function main() {
 
   const manifest = {
     slug: carousel.slug,
+    format,
     title: carousel.title,
     tag: carousel.tag,
     url: carousel.url,

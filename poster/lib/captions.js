@@ -29,19 +29,33 @@ const TAGS_BY_TAG = {
 };
 
 /**
+ * Five hashtags, category first.
+ *
+ * Instagram's actual cap is 30; five is their own published recommendation and
+ * what Instagram has said performs best. Category tags come before the generic
+ * ones because the first few are the ones that do any work — a post about
+ * security guard pay is better served by #सिक्योरिटीगार्ड than by #नौकरी, which
+ * it shares with half the country.
+ */
+const TAG_LIMIT = 5;
+
+function tagsFor(tag) {
+  return [...(TAGS_BY_TAG[tag] || []), ...BASE_TAGS].slice(0, TAG_LIMIT);
+}
+
+/**
  * Instagram counts every hashtag against the 2,200-character caption limit and
  * shows only the first two lines before "more", so the hook has to survive
  * truncation on its own.
  */
 function instagram({ title, url, tag }) {
-  const tags = [...(TAGS_BY_TAG[tag] || []), ...BASE_TAGS];
   return [
     title,
     "",
     "पूरी जानकारी वेबसाइट पर पढ़ें — लिंक बायो में।",
     "जॉब्स24इंडिया पर नौकरी खोजना और अप्लाई करना पूरी तरह मुफ्त है।",
     "",
-    tags.join(" "),
+    tagsFor(tag).join(" "),
   ].join("\n");
 }
 
@@ -51,6 +65,7 @@ function instagram({ title, url, tag }) {
  * Fewer hashtags: they read as spam on a Page and do little for reach.
  */
 function facebook({ title, url, tag }) {
+  // Fewer still on a Page, where hashtags read as spam and do little for reach.
   const tags = (TAGS_BY_TAG[tag] || []).slice(0, 3);
   return [
     title,

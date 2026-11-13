@@ -63,6 +63,7 @@ jobs:
           fc-list | grep -qi "devanagari"
 
       - name: Post carousel
+        id: post
         env:
           SITE_URL:          https://www.jobs24india.com
           SOCIAL_FEED_TOKEN: ${{ secrets.SOCIAL_FEED_TOKEN }}
@@ -71,6 +72,51 @@ jobs:
           FB_PAGE_ID:        ${{ secrets.FB_PAGE_ID }}
           DRY_RUN:           ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
         run: node poster/post.js blog-carousel ${{ inputs.slug }}
+
+      # The rotation has run out of articles. This is not a failure -- the run
+      # succeeded and correctly posted nothing -- but every future run will do
+      # the same, so the account goes quiet looking exactly like one that is
+      # working. Worse, with no commits the repo falls idle and GitHub disables
+      # scheduled workflows after 60 days, so adding translations later would
+      # not restart it. One open issue, not one per run.
+      - name: Flag an exhausted rotation
+        if: steps.post.outputs.exhausted == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const format = ${{ toJSON(steps.post.outputs.format) }} || 'carousel';
+            const title = `content-exhausted: no ${format} left to post`;
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: "open", labels: "content-exhausted",
+            });
+            if (existing.data.some(i => i.title === title)) {
+              core.info("already flagged — not opening a duplicate");
+              return;
+            }
+            await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              title,
+              labels: ["content-exhausted"],
+              body: [
+                `Every translated blog post has now been used as a **${format}**.`,
+                ``,
+                `From here every scheduled run posts nothing. That is correct behaviour,`,
+                `but it is indistinguishable from a healthy account, which is why this`,
+                `issue exists.`,
+                ``,
+                `Two things to know:`,
+                ``,
+                `1. The fix is more Hindi translations in the main repo`,
+                `   (\`src/data/blog/translations/hi/\`), not more code here.`,
+                `2. With nothing to commit this repo goes idle, and GitHub disables`,
+                `   scheduled workflows after 60 days of inactivity. If that happens,`,
+                `   re-enable the schedule from the Actions tab or the cron will not`,
+                `   resume by itself.`,
+                ``,
+                `Close this once new translations are live.`,
+              ].join("\n")
+            });
 
       - name: Open an issue on failure
         if: failure()

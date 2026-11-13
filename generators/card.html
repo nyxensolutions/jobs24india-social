@@ -106,6 +106,59 @@
   .pair.is-counter .pair-val { color: var(--counter); }
   .pair.is-counter .pair-key { color: var(--counter); opacity: .8; }
 
+  /* ── One-pager ────────────────────────────────────────────────────────────
+     Split card: navy above, white below. It has to work as a single image in
+     a grid, with no swipe to pay off a hook, so the claim and the number sit
+     on the same card — and the split makes a one-pager recognisable at
+     thumbnail size next to a carousel cover, which is otherwise all navy. */
+  .card.is-split { background: #ffffff; color: #16202e; }
+  .split-top {
+    position: relative; z-index: 2;
+    background:
+      radial-gradient(120% 120% at 110% -20%, #24427a 0%, rgba(36,66,122,0) 60%),
+      var(--navy);
+    color: #ffffff;
+    padding: 6.5cqw 7cqw 7cqw;
+    display: flex; flex-direction: column; gap: 3.2cqw;
+  }
+  .split-top .card-top { padding: 0; }
+  /* The eyebrow sits beside the logo here rather than on its own line, so the
+     standalone-chip margins have to go. */
+  .split-top .eyebrow { margin: 0; align-self: center; }
+  /* Smaller than a carousel hook (8.6cqw) on purpose: here the headline shares
+     the card with the fact below it, and at the larger size a long excerpt
+     pushed the body past the bottom edge by a few pixels. */
+  .split-head {
+    font-size: 6.9cqw; font-weight: 800; line-height: 1.28;
+    letter-spacing: -0.008em; text-wrap: balance;
+  }
+  .split-body {
+    position: relative; z-index: 2;
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column; justify-content: center;
+    gap: 2.4cqw; padding: 4cqw 7cqw;
+  }
+  .split-body .pairs { gap: 2.6cqw; }
+  .split-body .icon { font-size: 9cqw; }
+  /* Slightly below the carousel's 10.2cqw: a one-pager can show two values
+     under a headline, and at the larger size the second one fell off. */
+  .split-body .pair-val { font-size: 9.2cqw; }
+  .split-cta {
+    position: relative; z-index: 2;
+    display: flex; align-items: center; gap: 2.4cqw;
+    padding: 0 7cqw 3.5cqw;
+    font-size: 4.2cqw; font-weight: 800; color: var(--navy);
+  }
+  /*
+   * On a carousel a figure without a ₹ is a supporting fact and is set quietly,
+   * because three other slides carry the post. A one-pager has one number and
+   * that number is the entire card, so "बैलेंस का 75%" has to read as loudly as
+   * a rupee range would.
+   */
+  .split-body .pair-val.is-plain {
+    font-size: 8.6cqw; color: var(--navy); font-weight: 900; line-height: 1.18;
+  }
+
   .card-foot {
     position: relative; z-index: 2;
     display: flex; align-items: center; justify-content: space-between;
@@ -150,9 +203,13 @@
     const pairs = el("div", "pairs");
     chunks.forEach((chunk, i) => {
       const colon = chunk.indexOf(": ");
-      // Two values means the slide is a comparison, and the second is the
-      // claim being argued against — the scammer's number, not ours.
-      const pair = el("div", "pair" + (chunks.length === 2 && i === 1 ? " is-counter" : ""));
+      // Red marks a claim we are arguing against — a scammer's number — and
+      // nothing else. Keying it on "the second of two values" was wrong: on
+      // the Faridabad card that painted "experience needed: none" in alarm
+      // red, which is a selling point, not a warning. The column header is
+      // what actually says whose claim it is.
+      const isCounter = i > 0 && /(ठग|दावा|वादा|झूठ|फर्जी)/.test(chunk);
+      const pair = el("div", "pair" + (isCounter ? " is-counter" : ""));
       const value = colon === -1 ? chunk : chunk.slice(colon + 2);
       if (colon !== -1) pair.append(el("div", "pair-key", chunk.slice(0, colon)));
       const v = el("div", "pair-val", value);
@@ -163,7 +220,40 @@
     body.append(pairs);
   }
 
+  function renderOnePager(slide, meta) {
+    const card = el("div", "card is-split");
+    card.append(el("div", "ring ring-a"));
+
+    const top = el("div", "split-top");
+    const row = el("div", "card-top");
+    row.append(logo(true, false));
+    row.append(el("span", "eyebrow", meta.tag));
+    top.append(row);
+    top.append(el("div", "split-head", slide.headline));
+    card.append(top);
+
+    // No emoji here, unlike a carousel slide. The navy block and the orange
+    // chip already give this card its structure, and the icon plus its gap
+    // cost about 120px of the height the second value needs — three of the
+    // thirteen one-pagers overflowed with it in place.
+    const body = el("div", "split-body");
+    renderFact(body, slide.text);
+    card.append(body);
+
+    // The link lives in the bio, so the card can only point at it. A URL
+    // printed here is not tappable on Instagram and nobody types one in.
+    card.append(el("div", "split-cta", "\u{1F449} पूरी जानकारी — लिंक बायो में"));
+
+    const foot = el("div", "card-foot");
+    foot.append(el("span", "foot-url", "jobs24india.com"));
+    foot.append(el("span", "foot-bar"));
+    card.append(foot);
+
+    document.getElementById("root").append(card);
+  }
+
   function render(slide, meta) {
+    if (slide.kind === "onepager") return renderOnePager(slide, meta);
     const navy = slide.kind !== "fact";
     const card = el("div", "card" + (navy ? " is-navy" : ""));
 
