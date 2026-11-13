@@ -1,15 +1,20 @@
 name: Promo post
 
-# Wed 11:00 IST for employers (English), Sat 11:00 IST for seekers (Hindi).
-# GitHub reads cron as UTC, so 11:00 IST is 05:30 UTC — not 11:00.
+# Wed 12:00 IST for employers (English), Sat 12:00 IST for seekers (Hindi).
+# GitHub reads cron as UTC, so 12:00 IST is 06:30 UTC — not 12:00.
+#
+# Noon rather than 11:00 to stay off the blog carousel's slot. Wednesday has
+# both, and every posting workflow shares one concurrency group so they cannot
+# race on the content commit — at the same minute one would simply queue behind
+# the other, and a third arrival would cancel the one waiting.
 #
 # One workflow, two schedules, because the audience is decided by which cron
 # fired: `github.event.schedule` carries the expression verbatim, which is the
 # only thing a scheduled run knows about why it started.
 on:
   schedule:
-    - cron: "30 5 * * 3"   # Wednesday  -> employer, English
-    - cron: "30 5 * * 6"   # Saturday   -> seeker, Hindi
+    - cron: "30 6 * * 3"   # Wednesday  -> employer, English
+    - cron: "30 6 * * 6"   # Saturday   -> seeker, Hindi
   workflow_dispatch:
     inputs:
       audience:
@@ -60,7 +65,10 @@ jobs:
         run: |
           if [ -n "${{ inputs.audience }}" ]; then
             echo "audience=${{ inputs.audience }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event.schedule }}" = "30 5 * * 6" ]; then
+          # Must match the Saturday cron above exactly, character for
+          # character. If it drifts, Saturday falls through to the else and
+          # posts the English employer card to a Hindi seeker audience.
+          elif [ "${{ github.event.schedule }}" = "30 6 * * 6" ]; then
             echo "audience=seeker" >> "$GITHUB_OUTPUT"
           else
             echo "audience=employer" >> "$GITHUB_OUTPUT"
