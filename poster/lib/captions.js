@@ -79,4 +79,45 @@ function facebook({ title, url, tag }) {
   ].join("\n");
 }
 
-module.exports = { instagram, facebook };
+/**
+ * Promo captions.
+ *
+ * The two audiences get different languages and different asks, and never the
+ * same post: an employer reading Hindi job-seeker copy learns nothing about
+ * posting a vacancy, and a seeker reading "post a job free" is being sold
+ * something they do not need.
+ *
+ * The URL is written out for employers because the Page and LinkedIn are where
+ * they see it and both linkify; the seeker caption points at the bio, since
+ * Instagram does not.
+ */
+const PROMO_TAGS = {
+  employer: ["#Hiring", "#JobsInDelhiNCR", "#SmallBusiness", "#Recruitment", "#Jobs24India"],
+  seeker: ["#नौकरी", "#जॉब", "#फ्रेशरजॉब", "#दिल्लीNCR", "#Jobs24India"],
+};
+
+function promoInstagram({ audience, title, cta }) {
+  const lines = audience === "employer"
+    ? [
+        title,
+        "",
+        "Posting a job on Jobs24India is free, and you keep every application.",
+        "Start at jobs24india.com",
+      ]
+    : [
+        title,
+        "",
+        "जॉब्स24इंडिया पर नौकरी खोजना और अप्लाई करना पूरी तरह मुफ्त है।",
+        "लिंक बायो में।",
+      ];
+  return [...lines, "", (PROMO_TAGS[audience] || []).join(" ")].join("\n");
+}
+
+function promoFacebook({ audience, title, url }) {
+  const lines = audience === "employer"
+    ? [title, "", "Post a job free:", url, "", "You keep every application. No commission on any hire."]
+    : [title, "", "मुफ्त में नौकरी खोजें:", url];
+  return [...lines, "", (PROMO_TAGS[audience] || []).slice(0, 3).join(" ")].join("\n");
+}
+
+module.exports = { instagram, facebook, promoInstagram, promoFacebook };

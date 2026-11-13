@@ -126,13 +126,102 @@ async function assertNoOverflow(page, label) {
   }
 }
 
+/**
+ * Promos come from the local bank, not from the site.
+ *
+ * They are the product talking about itself, so there is nothing to extract
+ * and no database to ask — which also means no `SOCIAL_FEED_TOKEN` is needed
+ * for this format, and a promo still posts on a day the app is down.
+ *
+ * The rotation cycles rather than exhausts: an advert is meant to be seen more
+ * than once. Least-recently-used, so a bank of three spreads over three weeks
+ * before repeating instead of always offering the same card.
+ */
+async function generatePromo(args) {
+  const bank = require("./promo-bank.js");
+
+  const audIdx = args.indexOf("--audience");
+  const audience = audIdx === -1 ? "employer" : args[audIdx + 1];
+  if (audience !== "employer" && audience !== "seeker") {
+    throw new Error(`--audience must be "employer" or "seeker", got "${audience}"`);
+  }
+
+  const pool = bank.filter(p => p.audience === audience);
+  if (!pool.length) throw new Error(`No promos in the bank for audience "${audience}"`);
+
+  // Position in posted.json is recency; never-posted sorts first.
+  const order = new Map();
+  loadPostedPromoIds().forEach((id, i) => order.set(id, i));
+  const promo = [...pool].sort(
+    (a, b) => (order.get(a.id) ?? -1) - (order.get(b.id) ?? -1),
+  )[0];
+
+  const outDir = path.join(ROOT, "content", `promo-${promo.id}`);
+  fs.mkdirSync(outDir, { recursive: true });
+
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({
+      viewport: { width: WIDTH, height: HEIGHT },
+      deviceScaleFactor: 1,
+    });
+    await page.addInitScript(
+      ({ slide, meta }) => { window.__SLIDE__ = { slide, meta }; },
+      {
+        slide: { kind: "promo", headline: promo.headline, points: promo.points, cta: promo.cta },
+        meta: { index: 1, total: 1, tag: promo.eyebrow },
+      },
+    );
+    await page.goto("file://" + CARD.replace(/\\/g, "/"), { waitUntil: "load" });
+    await page.evaluate(() => document.fonts.ready);
+    // Hindi promos need the same font guarantee as any other Hindi card.
+    if (promo.lang === "hi") await assertDevanagari(page);
+    await assertNoOverflow(page, `promo ${promo.id}`);
+
+    const file = path.join(outDir, "01.png");
+    await page.locator(".card").screenshot({ path: file });
+    await page.close();
+
+    const manifest = {
+      slug: promo.id,
+      format: "promo",
+      audience: promo.audience,
+      lang: promo.lang,
+      title: promo.headline,
+      tag: promo.eyebrow,
+      cta: promo.cta,
+      url: (process.env.SITE_URL || "https://www.jobs24india.com") + "/",
+      files: [path.relative(ROOT, file).replace(/\\/g, "/")],
+      generatedAt: new Date().toISOString(),
+    };
+    fs.writeFileSync(path.join(outDir, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
+    console.log(`[generate] promo ${promo.id} (${promo.audience}/${promo.lang})`);
+  } finally {
+    await browser.close();
+  }
+}
+
+function loadPostedPromoIds() {
+  const p = path.join(ROOT, "state", "posted.json");
+  if (!fs.existsSync(p)) return [];
+  try {
+    return JSON.parse(fs.readFileSync(p, "utf8"))
+      .filter(r => r.format === "promo" && r.slug)
+      .map(r => r.slug);
+  } catch {
+    return [];
+  }
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const fmtIdx = args.indexOf("--format");
   const format = fmtIdx === -1 ? "carousel" : args[fmtIdx + 1];
-  if (format !== "carousel" && format !== "onepager") {
-    throw new Error(`--format must be "carousel" or "onepager", got "${format}"`);
+  if (!["carousel", "onepager", "promo"].includes(format)) {
+    throw new Error(`--format must be "carousel", "onepager" or "promo", got "${format}"`);
   }
+
+  if (format === "promo") return generatePromo(args);
   // Skip the value that belongs to --format, but only when --format was given:
   // with fmtIdx === -1 the guard would drop argv[0], which is the slug, and
   // the run would quietly render a different article than the one asked for.

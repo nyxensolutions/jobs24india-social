@@ -8,6 +8,23 @@ posts — so every rupee figure on a card is a string lifted verbatim from a
 table in an article that was already reviewed. The bot renders what it is
 handed and nothing else.
 
+## The week
+
+| When (IST) | Slot | What | Language |
+|---|---|---|---|
+| Mon / Wed / Fri 11:00 | `blog-carousel` | 5 slides from a Hindi blog post | Hindi |
+| Tue / Thu 19:00 | `blog-onepager` | 1 split card from a Hindi blog post | Hindi |
+| Wed 11:00 | `promo` | Jobs24India itself, for employers | English |
+| Sat 11:00 | `promo` | Jobs24India itself, for seekers | Hindi |
+
+Blog slots read from the site. Promos read from `generators/promo-bank.js` in
+this repo, so they need no `SOCIAL_FEED_TOKEN` and still post on a day the app
+is unreachable.
+
+Carousels and one-pagers keep **separate rotations** over the same articles, so
+one translation serves both. Promos **cycle** rather than exhaust —
+least-recently-used — because an advert is meant to be seen more than once.
+
 ## What it does
 
 ```

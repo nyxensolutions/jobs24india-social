@@ -28,7 +28,16 @@ const SLUG_ARG = process.argv[3];
 const DRY = process.env.DRY_RUN === "1";
 
 /** The slot decides the shape; everything downstream reads this. */
-const FORMAT = SLOT === "blog-onepager" ? "onepager" : "carousel";
+const FORMAT =
+  SLOT === "blog-onepager" ? "onepager" :
+  SLOT === "promo" ? "promo" : "carousel";
+
+/**
+ * Promos only. Which audience this run speaks to, and so which language it
+ * speaks — the two never share a post. An employer reading seeker copy learns
+ * nothing about posting a vacancy.
+ */
+const AUDIENCE = process.env.PROMO_AUDIENCE || "employer";
 
 const REPO_OWNER = process.env.GITHUB_REPOSITORY_OWNER || "nyxensolutions";
 const REPO_NAME = (process.env.GITHUB_REPOSITORY || "nyxensolutions/jobs24india-social").split("/").pop();
@@ -38,8 +47,8 @@ const RAW = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRAN
 const log = msg => console.log(`[${SLOT}] ${msg}`);
 const fail = msg => { console.error(`[${SLOT}] ERROR: ${msg}`); process.exit(1); };
 
-if (SLOT !== "blog-carousel" && SLOT !== "blog-onepager") {
-  fail(`unknown slot "${SLOT}". Expected "blog-carousel" or "blog-onepager".`);
+if (!["blog-carousel", "blog-onepager", "promo"].includes(SLOT)) {
+  fail(`unknown slot "${SLOT}". Expected "blog-carousel", "blog-onepager" or "promo".`);
 }
 
 /** Hands a flag back to the workflow, which decides whether to raise an issue. */
@@ -55,7 +64,10 @@ function generate() {
     [
       "generators/generate-carousel.js",
       "--format", FORMAT,
-      ...(SLUG_ARG ? [SLUG_ARG] : []),
+      ...(FORMAT === "promo" ? ["--audience", AUDIENCE] : []),
+      // A promo is chosen from the bank by rotation, so a slug means nothing
+      // to it; passing one through would be silently ignored.
+      ...(SLUG_ARG && FORMAT !== "promo" ? [SLUG_ARG] : []),
     ],
     { cwd: ROOT, stdio: "inherit" },
   );
@@ -121,8 +133,14 @@ async function main() {
   await commitContent(`content: ${manifest.slug} ${FORMAT} (${istDateString()})`);
 
   const imageUrls = manifest.files.map(f => `${RAW}/${f}`);
-  const igCaption = captions.instagram(manifest);
-  const fbCaption = captions.facebook(manifest);
+  // A promo's caption is written for its audience, not derived from a blog
+  // post, so it comes from a different builder entirely.
+  const igCaption = FORMAT === "promo"
+    ? captions.promoInstagram(manifest)
+    : captions.instagram(manifest);
+  const fbCaption = FORMAT === "promo"
+    ? captions.promoFacebook(manifest)
+    : captions.facebook(manifest);
 
   log(`${manifest.files.length} slides — "${manifest.title}"`);
   if (DRY) {

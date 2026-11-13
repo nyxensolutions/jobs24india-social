@@ -122,9 +122,10 @@
     display: flex; flex-direction: column; gap: 3.2cqw;
   }
   .split-top .card-top { padding: 0; }
-  /* The eyebrow sits beside the logo here rather than on its own line, so the
+  /* Where the eyebrow sits beside the logo rather than on its own line, the
      standalone-chip margins have to go. */
-  .split-top .eyebrow { margin: 0; align-self: center; }
+  .split-top .eyebrow,
+  .card-top .eyebrow { margin: 0; align-self: center; }
   /* Smaller than a carousel hook (8.6cqw) on purpose: here the headline shares
      the card with the fact below it, and at the larger size a long excerpt
      pushed the body past the bottom edge by a few pixels. */
@@ -157,6 +158,37 @@
    */
   .split-body .pair-val.is-plain {
     font-size: 8.6cqw; color: var(--navy); font-weight: 900; line-height: 1.18;
+  }
+
+  /* ── Promo ────────────────────────────────────────────────────────────────
+     The product talking about itself. Navy throughout rather than split: a
+     promo is an advert, not a fact card, and the uniform ground sets it apart
+     from both the blog formats in a grid. */
+  .promo-head {
+    font-size: 8.2cqw; font-weight: 900; line-height: 1.26;
+    letter-spacing: -0.01em; text-wrap: balance;
+  }
+  .promo-points {
+    display: flex; flex-direction: column; gap: 3.2cqw;
+    margin-top: 1.5cqw;
+  }
+  .promo-point {
+    display: flex; align-items: flex-start; gap: 3cqw;
+    font-size: 5cqw; font-weight: 600; line-height: 1.34; color: #dce7f8;
+  }
+  .promo-tick {
+    flex: 0 0 auto; width: 6.4cqw; height: 6.4cqw; border-radius: 50%;
+    background: var(--orange); color: #ffffff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3.6cqw; font-weight: 900; line-height: 1;
+    margin-top: 0.6cqw;
+  }
+  .promo-cta {
+    position: relative; z-index: 2;
+    margin: 0 7cqw 4cqw; align-self: flex-start;
+    background: var(--orange); color: #ffffff;
+    font-size: 4.4cqw; font-weight: 800;
+    padding: 2.6cqw 4.4cqw; border-radius: 2cqw;
   }
 
   .card-foot {
@@ -252,7 +284,39 @@
     document.getElementById("root").append(card);
   }
 
+  function renderPromo(slide, meta) {
+    const card = el("div", "card is-navy");
+    card.append(el("div", "ring ring-a"));
+
+    const top = el("div", "card-top");
+    top.append(logo(true, false));
+    top.append(el("span", "eyebrow", meta.tag));
+    card.append(top);
+
+    const body = el("div", "card-body");
+    body.append(el("div", "promo-head", slide.headline));
+    const points = el("div", "promo-points");
+    for (const p of slide.points) {
+      const row = el("div", "promo-point");
+      row.append(el("span", "promo-tick", "✓"));
+      row.append(el("span", null, p));
+      points.append(row);
+    }
+    body.append(points);
+    card.append(body);
+
+    card.append(el("div", "promo-cta", slide.cta));
+
+    const foot = el("div", "card-foot");
+    foot.append(el("span", "foot-url", "jobs24india.com"));
+    foot.append(el("span", "foot-bar"));
+    card.append(foot);
+
+    document.getElementById("root").append(card);
+  }
+
   function render(slide, meta) {
+    if (slide.kind === "promo") return renderPromo(slide, meta);
     if (slide.kind === "onepager") return renderOnePager(slide, meta);
     const navy = slide.kind !== "fact";
     const card = el("div", "card" + (navy ? " is-navy" : ""));
