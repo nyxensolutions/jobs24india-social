@@ -22,14 +22,36 @@ required) and the YouTube Audio Library filtered to "no attribution required".
 Search for *corporate uplifting*, *minimal optimistic*, *light background*,
 around 100–120 BPM.
 
-## Record where each one came from
+## The beds in use
 
-Add a line here for every file, so that in six months there is a record of why
-we are allowed to use it:
+Five, trimmed to 20 seconds each from 0:15 of the source track — past the
+intro, where the arrangement is established — and loudness-matched to
+-16 LUFS so five beds do not post at five different volumes.
 
 | File | Source | Licence |
 |---|---|---|
-| _(none yet)_ | | |
+| `bed-01.mp3` | **to fill in** | **to fill in** |
+| `bed-02.mp3` | **to fill in** | **to fill in** |
+| `bed-03.mp3` | **to fill in** | **to fill in** |
+| `bed-04.mp3` | **to fill in** | **to fill in** |
+| `bed-05.mp3` | **to fill in** | **to fill in** |
+
+**These rows are not paperwork.** If a track turns out to be licensed rather
+than CC0, the reel using it gets muted or pulled, and an automated account
+cannot notice that happening. Without a record there is no way to work out
+afterwards which posts are affected or which file to remove.
+
+The full-length sources are kept in `originals/`, which is gitignored: CI
+clones this repo on every run, and committing 21MB of MP3 to use nine seconds
+of each would sit in the history permanently.
+
+To add another: drop the track in `originals/`, then
+
+```bash
+ffmpeg -y -ss 15 -t 20 -i assets/audio/originals/NEW.mp3 \
+  -af "loudnorm=I=-16:TP=-1.5:LRA=11" \
+  -c:a libmp3lame -b:a 128k -ar 44100 assets/audio/bed-06.mp3
+```
 
 ## How they are used
 

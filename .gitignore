@@ -2,3 +2,7 @@ node_modules/
 .env
 .env.local
 *.log
+
+# Full-length source tracks. Only the trimmed beds are committed: CI clones
+# this repo on every run and a reel uses nine seconds of a bed.
+assets/audio/originals/

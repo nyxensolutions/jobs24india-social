@@ -176,7 +176,7 @@ async function main() {
 
   // Facebook failing must not lose the Instagram post that already succeeded,
   // so it is recorded before the Page call and the error is reported after.
-  record({ slotKey, slug: manifest.slug, format: FORMAT, lang: manifest.lang ?? LANG, instagram: igId, network: "instagram" });
+  record({ slotKey, slug: manifest.slug, format: FORMAT, lang: manifest.lang ?? LANG, ...(manifest.audio ? { audio: manifest.audio } : {}), instagram: igId, network: "instagram" });
 
   let fbId = null;
   try {
@@ -184,7 +184,7 @@ async function main() {
       ? await postVideo({ videoUrl: imageUrls[0], caption: fbCaption })
       : await postPhotoSet({ imageUrls, caption: fbCaption });
     log(`facebook published ${fbId}`);
-    record({ slotKey: slotKey + "-fb", slug: manifest.slug, format: FORMAT, lang: manifest.lang ?? LANG, facebook: fbId, network: "facebook" });
+    record({ slotKey: slotKey + "-fb", slug: manifest.slug, format: FORMAT, lang: manifest.lang ?? LANG, ...(manifest.audio ? { audio: manifest.audio } : {}), facebook: fbId, network: "facebook" });
   } catch (err) {
     console.error(`[${SLOT}] facebook failed after Instagram succeeded: ${err.message}`);
     process.exitCode = 1;

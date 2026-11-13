@@ -81,12 +81,35 @@ function pickAudio() {
       `(CC0 or Pixabay, 15s or longer, no vocals) before generating reels.`,
     );
   }
-  const beds = fs.readdirSync(AUDIO_DIR).filter(f => /\.(mp3|m4a|wav)$/i.test(f)).sort();
+  const beds = fs.readdirSync(AUDIO_DIR)
+    .filter(f => /\.(mp3|m4a|wav)$/i.test(f))
+    .sort();
   if (!beds.length) {
     throw new Error(`assets/audio/ has no .mp3/.m4a/.wav file to use as a bed.`);
   }
-  const day = Math.floor(Date.now() / 86400000);
-  return path.join(AUDIO_DIR, beds[day % beds.length]);
+
+  /**
+   * Random, but never the same bed twice running.
+   *
+   * Pure random repeats more often than people expect — with five beds there
+   * is a one-in-five chance of two identical weeks in a row, and the one thing
+   * a viewer notices across posts is the music. The last bed used is in
+   * posted.json, so it is simply excluded from the draw.
+   */
+  const last = lastBedUsed();
+  const pool = beds.length > 1 ? beds.filter(b => b !== last) : beds;
+  return path.join(AUDIO_DIR, pool[Math.floor(Math.random() * pool.length)]);
+}
+
+function lastBedUsed() {
+  const p = path.join(ROOT, "state", "posted.json");
+  if (!fs.existsSync(p)) return null;
+  try {
+    const rows = JSON.parse(fs.readFileSync(p, "utf8")).filter(r => r.audio);
+    return rows.length ? rows[rows.length - 1].audio : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Renders one 1080×1920 still through card.html. */
