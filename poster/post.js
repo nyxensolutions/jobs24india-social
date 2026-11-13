@@ -16,8 +16,8 @@
 const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
-const { postCarousel, postImage } = require("./lib/graph");
-const { postPhotoSet } = require("./lib/facebook");
+const { postCarousel, postImage, postReel } = require("./lib/graph");
+const { postPhotoSet, postVideo } = require("./lib/facebook");
 const { alreadyPosted, record } = require("./lib/state");
 const { istDateString } = require("./lib/dateist");
 const captions = require("./lib/captions");
@@ -30,7 +30,8 @@ const DRY = process.env.DRY_RUN === "1";
 /** The slot decides the shape; everything downstream reads this. */
 const FORMAT =
   SLOT === "blog-onepager" ? "onepager" :
-  SLOT === "promo" ? "promo" : "carousel";
+  SLOT === "promo" ? "promo" :
+  SLOT === "reel" ? "reel" : "carousel";
 
 /**
  * Promos only. Which audience this run speaks to, and so which language it
@@ -47,8 +48,8 @@ const RAW = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRAN
 const log = msg => console.log(`[${SLOT}] ${msg}`);
 const fail = msg => { console.error(`[${SLOT}] ERROR: ${msg}`); process.exit(1); };
 
-if (!["blog-carousel", "blog-onepager", "promo"].includes(SLOT)) {
-  fail(`unknown slot "${SLOT}". Expected "blog-carousel", "blog-onepager" or "promo".`);
+if (!["blog-carousel", "blog-onepager", "promo", "reel"].includes(SLOT)) {
+  fail(`unknown slot "${SLOT}". Expected "blog-carousel", "blog-onepager", "promo" or "reel".`);
 }
 
 /** Hands a flag back to the workflow, which decides whether to raise an issue. */
@@ -62,8 +63,10 @@ function generate() {
   const res = require("child_process").spawnSync(
     process.execPath,
     [
-      "generators/generate-carousel.js",
-      "--format", FORMAT,
+      // Reels need ffmpeg and a music bed, so they have their own generator
+      // rather than another branch inside the still-image one.
+      FORMAT === "reel" ? "generators/generate-reel.js" : "generators/generate-carousel.js",
+      ...(FORMAT === "reel" ? [] : ["--format", FORMAT]),
       ...(FORMAT === "promo" ? ["--audience", AUDIENCE] : []),
       // A promo is chosen from the bank by rotation, so a slug means nothing
       // to it; passing one through would be silently ignored.
@@ -150,11 +153,15 @@ async function main() {
     return;
   }
 
-  // A one-pager is a single image; the carousel endpoint rejects fewer than
-  // two children, so the call itself differs rather than just the payload.
-  const igId = imageUrls.length === 1
-    ? await postImage({ imageUrl: imageUrls[0], caption: igCaption })
-    : await postCarousel({ imageUrls, caption: igCaption });
+  // Three shapes, three calls. A reel is a video container that Instagram
+  // transcodes before it will publish, so it polls for longer than a photo;
+  // a one-pager is a single image, and the carousel endpoint rejects fewer
+  // than two children.
+  const igId = FORMAT === "reel"
+    ? await postReel({ videoUrl: imageUrls[0], caption: igCaption })
+    : imageUrls.length === 1
+      ? await postImage({ imageUrl: imageUrls[0], caption: igCaption })
+      : await postCarousel({ imageUrls, caption: igCaption });
   log(`instagram published ${igId}`);
 
   // Facebook failing must not lose the Instagram post that already succeeded,
@@ -163,7 +170,9 @@ async function main() {
 
   let fbId = null;
   try {
-    fbId = await postPhotoSet({ imageUrls, caption: fbCaption });
+    fbId = FORMAT === "reel"
+      ? await postVideo({ videoUrl: imageUrls[0], caption: fbCaption })
+      : await postPhotoSet({ imageUrls, caption: fbCaption });
     log(`facebook published ${fbId}`);
     record({ slotKey: slotKey + "-fb", slug: manifest.slug, format: FORMAT, facebook: fbId, network: "facebook" });
   } catch (err) {

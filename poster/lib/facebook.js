@@ -89,4 +89,26 @@ async function postPhotoSet({ imageUrls, caption }) {
   return body.id;
 }
 
-module.exports = { postPhotoSet, pageToken };
+/**
+ * Posts a video to the Page feed.
+ *
+ * Deliberately /videos rather than /video_reels. The reels endpoint needs a
+ * three-call upload session (start, transfer, finish) and rejects a remote
+ * URL, so it would mean streaming the file from this runner; /videos takes
+ * file_url and lets Facebook fetch it, the same way the photo and Instagram
+ * flows already work. The video still plays in the feed — it is just filed as
+ * a video post rather than a Reel.
+ */
+async function postVideo({ videoUrl, caption }) {
+  const pageId = need("FB_PAGE_ID");
+  const token = await pageToken();
+  const params = new URLSearchParams({
+    file_url: videoUrl,
+    description: caption || "",
+    access_token: token,
+  });
+  const body = await call(`/${pageId}/videos`, { method: "POST", body: params });
+  return body.id;
+}
+
+module.exports = { postPhotoSet, postVideo, pageToken };

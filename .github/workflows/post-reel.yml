@@ -1,0 +1,114 @@
+name: Hindi reel
+
+# Sunday 19:00 IST. GitHub reads cron as UTC, so that is 13:30 UTC.
+#
+# One a week on purpose. Reels share a small pool of music beds, and the same
+# track under every post is more noticeable than the same card layout.
+on:
+  schedule:
+    - cron: "30 13 * * 0"
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: "Post a specific blog slug instead of the next in rotation"
+        type: string
+        required: false
+      dry_run:
+        description: "Build and commit the MP4, but make no API call"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: social-bot-content
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+
+      - run: npm ci || npm install
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Install Devanagari fonts
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-core fonts-noto-color-emoji
+          fc-cache -f
+          fc-list | grep -qi "devanagari"
+
+      # ubuntu-latest ships ffmpeg, but asserting costs a second and turns a
+      # confusing ENOENT deep inside the generator into an obvious message.
+      - name: Check ffmpeg
+        run: ffmpeg -version | head -1
+
+      # The generator refuses to build a silent reel, but failing here says
+      # why in one line instead of after four minutes of rendering.
+      - name: Check for a music bed
+        run: |
+          if ! ls assets/audio/*.mp3 assets/audio/*.m4a assets/audio/*.wav >/dev/null 2>&1; then
+            echo "::error::assets/audio/ has no music bed. Add a licence-clear instrumental (CC0 or Pixabay, 15s+, no vocals). See assets/audio/README.md."
+            exit 1
+          fi
+          ls -la assets/audio/
+
+      - name: Post reel
+        id: post
+        env:
+          SITE_URL:          https://www.jobs24india.com
+          SOCIAL_FEED_TOKEN: ${{ secrets.SOCIAL_FEED_TOKEN }}
+          IG_USER_ID:        ${{ secrets.IG_USER_ID }}
+          SYSTEM_USER_TOKEN: ${{ secrets.SYSTEM_USER_TOKEN }}
+          FB_PAGE_ID:        ${{ secrets.FB_PAGE_ID }}
+          DRY_RUN:           ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
+        run: node poster/post.js reel ${{ inputs.slug }}
+
+      - name: Flag an exhausted rotation
+        if: steps.post.outputs.exhausted == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `content-exhausted: no reel left to post`;
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: "open", labels: "content-exhausted",
+            });
+            if (existing.data.some(i => i.title === title)) {
+              core.info("already flagged — not opening a duplicate");
+              return;
+            }
+            await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              title,
+              labels: ["content-exhausted"],
+              body: [
+                `Every translated blog post has now been used as a reel.`,
+                ``,
+                `From here every scheduled run posts nothing, which looks exactly`,
+                `like a healthy account. The fix is more Hindi translations in the`,
+                `main repo, not more code here.`,
+              ].join("\n")
+            });
+
+      - name: Open an issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `posting-failure: reel (${new Date().toISOString().slice(0,10)})`,
+              labels: ["posting-failure"],
+              body: `Workflow [${context.workflow}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) failed.`
+            });
