@@ -201,6 +201,53 @@ async function generatePromo(args) {
   }
 }
 
+/**
+ * The closing frame of a reel, at 1080×1920.
+ *
+ * Generated rather than filmed. Asking a video model for a logo produces
+ * mangled lettering every time, and the end card is the one frame where the
+ * wordmark and the URL have to be exactly right — it is the only part of a
+ * reel anyone is meant to act on.
+ *
+ *   node generators/generate-carousel.js --format endcard --audience employer
+ */
+async function generateEndCard(args) {
+  const audIdx = args.indexOf("--audience");
+  const audience = audIdx === -1 ? "employer" : args[audIdx + 1];
+  if (audience !== "employer" && audience !== "seeker") {
+    throw new Error(`--audience must be "employer" or "seeker", got "${audience}"`);
+  }
+
+  const text = audience === "employer"
+    ? "Post a job free"
+    : "मुफ्त में नौकरी खोजें";
+
+  const outDir = path.join(ROOT, "content", `endcard-${audience}`);
+  fs.mkdirSync(outDir, { recursive: true });
+
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({
+      viewport: { width: WIDTH, height: 1920 },
+      deviceScaleFactor: 1,
+    });
+    await page.addInitScript(
+      ({ slide }) => { window.__SLIDE__ = { slide, meta: { index: 1, total: 1, tag: "" } }; },
+      { slide: { kind: "endcard", text } },
+    );
+    await page.goto("file://" + CARD.replace(/\\/g, "/"), { waitUntil: "load" });
+    await page.evaluate(() => document.fonts.ready);
+    if (audience === "seeker") await assertDevanagari(page);
+
+    const file = path.join(outDir, "endcard.png");
+    await page.locator(".card").screenshot({ path: file });
+    await page.close();
+    console.log(`[generate] ${path.relative(ROOT, file)} (1080x1920, ${audience})`);
+  } finally {
+    await browser.close();
+  }
+}
+
 function loadPostedPromoIds() {
   const p = path.join(ROOT, "state", "posted.json");
   if (!fs.existsSync(p)) return [];
@@ -217,11 +264,12 @@ async function main() {
   const args = process.argv.slice(2);
   const fmtIdx = args.indexOf("--format");
   const format = fmtIdx === -1 ? "carousel" : args[fmtIdx + 1];
-  if (!["carousel", "onepager", "promo"].includes(format)) {
-    throw new Error(`--format must be "carousel", "onepager" or "promo", got "${format}"`);
+  if (!["carousel", "onepager", "promo", "endcard"].includes(format)) {
+    throw new Error(`--format must be "carousel", "onepager", "promo" or "endcard", got "${format}"`);
   }
 
   if (format === "promo") return generatePromo(args);
+  if (format === "endcard") return generateEndCard(args);
   // Skip the value that belongs to --format, but only when --format was given:
   // with fmtIdx === -1 the guard would drop argv[0], which is the slug, and
   // the run would quietly render a different article than the one asked for.

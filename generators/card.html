@@ -38,6 +38,11 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Reels are 9:16, not the 4:5 of a feed card. Everything inside is still in
+     cqw, so the same rules lay out correctly at either shape — only the frame
+     changes. */
+  body.reel, body.reel .card { width: 1080px; height: 1920px; }
+
   .card {
     container-type: inline-size;
     width: 1080px; height: 1350px;
@@ -191,6 +196,28 @@
     padding: 2.6cqw 4.4cqw; border-radius: 2cqw;
   }
 
+  /* ── End card ─────────────────────────────────────────────────────────────
+     The last two seconds of a reel. Generated rather than filmed: asking a
+     video model for a logo produces mangled lettering every time, and this is
+     the one frame where the brand has to be exact. */
+  .end-wrap {
+    position: relative; z-index: 2;
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; text-align: center;
+    gap: 5cqw; padding: 8cqw 9cqw;
+  }
+  .end-logo { width: 62cqw; height: auto; display: block; }
+  .end-line {
+    font-size: 7.2cqw; font-weight: 900; line-height: 1.28;
+    letter-spacing: -0.01em; text-wrap: balance;
+  }
+  .end-url {
+    background: var(--orange); color: #ffffff;
+    font-size: 5.2cqw; font-weight: 800;
+    padding: 3cqw 5.5cqw; border-radius: 2.2cqw;
+  }
+
   .card-foot {
     position: relative; z-index: 2;
     display: flex; align-items: center; justify-content: space-between;
@@ -315,7 +342,26 @@
     document.getElementById("root").append(card);
   }
 
+  function renderEndCard(slide) {
+    document.body.classList.add("reel");
+    const card = el("div", "card is-navy");
+    card.append(el("div", "ring ring-a"));
+
+    const wrap = el("div", "end-wrap");
+    const img = document.createElement("img");
+    img.className = "end-logo";
+    img.src = "../assets/logo-light.png";
+    img.alt = "Jobs24India";
+    wrap.append(img);
+    wrap.append(el("div", "end-line", slide.text));
+    wrap.append(el("div", "end-url", "jobs24india.com"));
+    card.append(wrap);
+
+    document.getElementById("root").append(card);
+  }
+
   function render(slide, meta) {
+    if (slide.kind === "endcard") return renderEndCard(slide);
     if (slide.kind === "promo") return renderPromo(slide, meta);
     if (slide.kind === "onepager") return renderOnePager(slide, meta);
     const navy = slide.kind !== "fact";
