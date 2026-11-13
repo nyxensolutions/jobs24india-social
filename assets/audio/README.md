@@ -30,16 +30,26 @@ intro, where the arrangement is established — and loudness-matched to
 
 | File | Source | Licence |
 |---|---|---|
-| `bed-01.mp3` | **to fill in** | **to fill in** |
-| `bed-02.mp3` | **to fill in** | **to fill in** |
-| `bed-03.mp3` | **to fill in** | **to fill in** |
-| `bed-04.mp3` | **to fill in** | **to fill in** |
-| `bed-05.mp3` | **to fill in** | **to fill in** |
+| `bed-01.mp3` | Pixabay Music | Pixabay Content License — free for commercial use, no attribution |
+| `bed-02.mp3` | Pixabay Music | Pixabay Content License |
+| `bed-03.mp3` | Pixabay Music | Pixabay Content License |
+| `bed-04.mp3` | Pixabay Music | Pixabay Content License |
+| `bed-05.mp3` | Pixabay Music | Pixabay Content License |
 
-**These rows are not paperwork.** If a track turns out to be licensed rather
-than CC0, the reel using it gets muted or pulled, and an automated account
-cannot notice that happening. Without a record there is no way to work out
-afterwards which posts are affected or which file to remove.
+All five downloaded from Pixabay on 13 Nov 2026. The Pixabay Content License
+permits commercial use without attribution, which is why these are safe to burn
+into a reel that posts unattended.
+
+**The individual track pages are not recorded.** That is the one gap left: if
+Pixabay ever re-licenses a specific track, or a claim arrives naming one, there
+is no link back to the original listing. Not worth re-downloading for, but
+worth pasting in below if the URLs are still to hand.
+
+**These rows are not paperwork.** A track that turns out to be licensed rather
+than free gets its reel muted or pulled, and an automated account cannot notice
+that happening. `state/posted.json` records the `audio` field against every
+reel, so a takedown can be traced back to the bed that caused it — but only
+while this table says what each file is.
 
 The full-length sources are kept in `originals/`, which is gitignored: CI
 clones this repo on every run, and committing 21MB of MP3 to use nine seconds
