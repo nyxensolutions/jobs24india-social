@@ -40,17 +40,21 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
-      - name: Install Devanagari fonts
+      # ffmpeg is NOT on ubuntu-latest. It shipped with the older images and
+      # was dropped from ubuntu-24.04, which is what ubuntu-latest now points
+      # at — so it has to be installed like any other dependency.
+      - name: Install fonts and ffmpeg
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq fonts-noto-core fonts-noto-color-emoji
+          sudo apt-get install -y -qq fonts-noto-core fonts-noto-color-emoji ffmpeg
           fc-cache -f
           fc-list | grep -qi "devanagari"
-
-      # ubuntu-latest ships ffmpeg, but asserting costs a second and turns a
-      # confusing ENOENT deep inside the generator into an obvious message.
-      - name: Check ffmpeg
-        run: ffmpeg -version | head -1
+          # `command -v`, not `ffmpeg -version | head -1`. A pipeline takes its
+          # exit status from the last command, so head's success masked
+          # "ffmpeg: command not found" entirely and the step went green while
+          # reporting the error in its own log.
+          command -v ffmpeg >/dev/null || { echo "::error::ffmpeg missing after install"; exit 1; }
+          ffmpeg -version | head -1
 
       # The generator refuses to build a silent reel, but failing here says
       # why in one line instead of after four minutes of rendering.
