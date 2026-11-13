@@ -8,7 +8,7 @@
 // credentials and writes no copy. Every rupee figure on a card is a string the
 // endpoint lifted verbatim from a table in the article.
 //
-// Output: content/<slug>/01.png … 05.png, plus carousel.json for the poster.
+// Output: content/<slug>/01.png … 05.png, plus manifest.json for the poster.
 
 const fs = require("fs");
 const path = require("path");
@@ -196,7 +196,7 @@ async function main() {
     files,
     generatedAt: new Date().toISOString(),
   };
-  fs.writeFileSync(path.join(outDir, "carousel.json"), JSON.stringify(manifest, null, 2) + "\n");
+  fs.writeFileSync(path.join(outDir, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
   console.log(`[generate] ${files.length} slides for "${carousel.title}"`);
 }
 

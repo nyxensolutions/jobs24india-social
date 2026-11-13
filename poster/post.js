@@ -83,7 +83,11 @@ function commitContent(message) {
     if (!changed) { log("no new content to commit"); return Promise.resolve(); }
     const GIT = `git -c user.name="social-bot" -c user.email="nyxencloud@gmail.com"`;
     execSync(`${GIT} commit -m "${message}"`, { cwd: ROOT, stdio: "inherit" });
-    execSync(`${GIT} pull --rebase origin ${BRANCH}`, { cwd: ROOT, stdio: "inherit" });
+    // --autostash because only content/ and state/ were staged above: any other
+    // dirty file in the tree aborts the rebase and fails the run *after* the
+    // commit is already made. CI always checks out clean, but a local dry run
+    // with edits in progress hit exactly that.
+    execSync(`${GIT} pull --rebase --autostash origin ${BRANCH}`, { cwd: ROOT, stdio: "inherit" });
     execSync(`git push origin HEAD:${BRANCH}`, { cwd: ROOT, stdio: "inherit" });
     log("pushed content — waiting 15s for raw URLs to propagate");
     return new Promise(r => setTimeout(r, 15_000));
@@ -98,11 +102,13 @@ async function main() {
   // The generator wrote exactly one manifest; find the newest.
   const contentDir = path.join(ROOT, "content");
   const manifests = fs.readdirSync(contentDir)
-    .map(d => path.join(contentDir, d, "carousel.json"))
+    // carousel.json is the pre-one-pager name; runs already in the repo still
+    // use it, so both are accepted rather than orphaning that history.
+    .flatMap(d => ["manifest.json", "carousel.json"].map(n => path.join(contentDir, d, n)))
     .filter(p => fs.existsSync(p))
     .map(p => ({ p, mtime: fs.statSync(p).mtimeMs }))
     .sort((a, b) => b.mtime - a.mtime);
-  if (!manifests.length) fail("generator produced no carousel.json");
+  if (!manifests.length) fail("generator produced no manifest.json");
 
   const manifest = JSON.parse(fs.readFileSync(manifests[0].p, "utf8"));
   const slotKey = `${istDateString()}-${SLOT}`;
@@ -112,7 +118,7 @@ async function main() {
     return;
   }
 
-  await commitContent(`content: ${manifest.slug} carousel (${istDateString()})`);
+  await commitContent(`content: ${manifest.slug} ${FORMAT} (${istDateString()})`);
 
   const imageUrls = manifest.files.map(f => `${RAW}/${f}`);
   const igCaption = captions.instagram(manifest);
