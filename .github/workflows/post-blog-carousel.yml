@@ -57,7 +57,7 @@ jobs:
           SITE_URL:          https://www.jobs24india.com
           SOCIAL_FEED_TOKEN: ${{ secrets.SOCIAL_FEED_TOKEN }}
           IG_USER_ID:        ${{ secrets.IG_USER_ID }}
-          IG_ACCESS_TOKEN:   ${{ secrets.IG_ACCESS_TOKEN }}
+          SYSTEM_USER_TOKEN: ${{ secrets.SYSTEM_USER_TOKEN }}
           FB_PAGE_ID:        ${{ secrets.FB_PAGE_ID }}
           DRY_RUN:           ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
         run: node poster/post.js blog-carousel ${{ inputs.slug }}

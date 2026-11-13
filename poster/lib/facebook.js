@@ -40,7 +40,7 @@ async function call(pathQ, init = {}) {
  */
 async function pageToken() {
   const pageId = need("FB_PAGE_ID");
-  const userToken = need("IG_ACCESS_TOKEN");
+  const userToken = need("SYSTEM_USER_TOKEN");
   const body = await call(
     `/me/accounts?fields=id,access_token&limit=100&access_token=${encodeURIComponent(userToken)}`,
   );

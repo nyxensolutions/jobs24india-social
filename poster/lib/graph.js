@@ -4,6 +4,12 @@
 //   - postCarousel([urls], caption)      -> multi-image carousel
 //   - postReel(url, caption)             -> video reel
 //   - refreshToken()                     -> rotate the 60-day token
+//
+// Taken from olympiadready-social with one change: the token env var here is
+// SYSTEM_USER_TOKEN, not IG_ACCESS_TOKEN. That is the secret this repo already
+// holds, and it really is a system user token (expires_at: 0) rather than a
+// 60-day one — so refreshLongLivedToken below is unused. Storing one value
+// under two names would mean a rotation silently leaves one of them stale.
 
 const API = "https://graph.facebook.com/v21.0";
 
@@ -88,14 +94,14 @@ async function publish(igUserId, containerId, token) {
 
 // ── high-level helpers ────────────────────────────────────────────
 async function postImage({ imageUrl, caption }) {
-  const ig = need("IG_USER_ID"); const tok = need("IG_ACCESS_TOKEN");
+  const ig = need("IG_USER_ID"); const tok = need("SYSTEM_USER_TOKEN");
   const c = await createImageContainer(ig, tok, imageUrl, caption);
   await waitForReady(c, tok);
   return publish(ig, c, tok);
 }
 
 async function postCarousel({ imageUrls, caption }) {
-  const ig = need("IG_USER_ID"); const tok = need("IG_ACCESS_TOKEN");
+  const ig = need("IG_USER_ID"); const tok = need("SYSTEM_USER_TOKEN");
   if (imageUrls.length < 2 || imageUrls.length > 10) {
     throw new Error(`Carousel needs 2–10 images, got ${imageUrls.length}`);
   }
@@ -111,7 +117,7 @@ async function postCarousel({ imageUrls, caption }) {
 }
 
 async function postReel({ videoUrl, caption }) {
-  const ig = need("IG_USER_ID"); const tok = need("IG_ACCESS_TOKEN");
+  const ig = need("IG_USER_ID"); const tok = need("SYSTEM_USER_TOKEN");
   const c = await createReelContainer(ig, tok, videoUrl, caption);
   await waitForReady(c, tok, { timeoutMs: 8 * 60_000 }); // reels take longer
   return publish(ig, c, tok);
@@ -120,7 +126,7 @@ async function postReel({ videoUrl, caption }) {
 async function refreshLongLivedToken() {
   const id  = need("IG_APP_ID");
   const sec = need("IG_APP_SECRET");
-  const tok = need("IG_ACCESS_TOKEN");
+  const tok = need("SYSTEM_USER_TOKEN");
   const url = `${API}/oauth/access_token?grant_type=fb_exchange_token&client_id=${id}&client_secret=${sec}&fb_exchange_token=${encodeURIComponent(tok)}`;
   const res = await fetch(url);
   const body = await res.json();

@@ -50,8 +50,14 @@ Set in Settings → Secrets and variables → Actions.
 |---|---|
 | `SOCIAL_FEED_TOKEN` | same value as `SOCIAL_FEED_TOKEN` in the app's Vercel env |
 | `IG_USER_ID` | Instagram Business account numeric id |
-| `IG_ACCESS_TOKEN` | long-lived user token (60 days — rotate it) |
+| `SYSTEM_USER_TOKEN` | Meta system user token — `expires_at: 0`, so it never lapses |
 | `FB_PAGE_ID` | the Facebook Page id |
+
+`IG_APP_ID` and `IG_APP_SECRET` are also set on the repo but nothing reads them:
+they exist for the 60-day token exchange, which a system user token does not
+need. `olympiadready-social` calls this same token `IG_ACCESS_TOKEN`; the name
+differs here because this one really is a system user token, and keeping the
+same value under two names would mean a rotation silently leaves one stale.
 
 There is deliberately **no** `FB_PAGE_ACCESS_TOKEN`. Page tokens derived from a
 user token stop working the moment that token is rotated, and a stored one
