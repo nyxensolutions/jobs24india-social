@@ -48,7 +48,19 @@ function tagsFor(tag) {
  * shows only the first two lines before "more", so the hook has to survive
  * truncation on its own.
  */
-function instagram({ title, url, tag }) {
+function instagram({ title, url, tag, lang }) {
+  if (lang === "en") {
+    return [
+      title,
+      "",
+      "Full guide on the website — link in bio.",
+      "Searching and applying on Jobs24India is completely free.",
+      "",
+      // The Hindi tags would be noise on an English post and would put it in
+      // front of an audience the card is not written for.
+      ["#Jobs", "#JobSearch", "#FresherJobs", "#CareerTips", "#Jobs24India"].join(" "),
+    ].join("\n");
+  }
   return [
     title,
     "",
@@ -64,7 +76,19 @@ function instagram({ title, url, tag }) {
  * so the URL goes in the text here where on Instagram it would be dead weight.
  * Fewer hashtags: they read as spam on a Page and do little for reach.
  */
-function facebook({ title, url, tag }) {
+function facebook({ title, url, tag, lang }) {
+  if (lang === "en") {
+    return [
+      title,
+      "",
+      "Full guide:",
+      url,
+      "",
+      "Searching and applying on Jobs24India is completely free.",
+      "",
+      "#Jobs #CareerTips #Jobs24India",
+    ].join("\n");
+  }
   // Fewer still on a Page, where hashtags read as spam and do little for reach.
   const tags = (TAGS_BY_TAG[tag] || []).slice(0, 3);
   return [

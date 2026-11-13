@@ -40,6 +40,13 @@ const FORMAT =
  */
 const AUDIENCE = process.env.PROMO_AUDIENCE || "employer";
 
+/**
+ * Blog slots only. Hindi unless told otherwise — English runs for a short
+ * allowlist of posts whose readers genuinely work in English, never as a
+ * mirror of the Hindi feed.
+ */
+const LANG = process.env.POST_LANG === "en" ? "en" : "hi";
+
 const REPO_OWNER = process.env.GITHUB_REPOSITORY_OWNER || "nyxensolutions";
 const REPO_NAME = (process.env.GITHUB_REPOSITORY || "nyxensolutions/jobs24india-social").split("/").pop();
 const BRANCH = process.env.GITHUB_REF_NAME || "main";
@@ -68,6 +75,7 @@ function generate() {
       FORMAT === "reel" ? "generators/generate-reel.js" : "generators/generate-carousel.js",
       ...(FORMAT === "reel" ? [] : ["--format", FORMAT]),
       ...(FORMAT === "promo" ? ["--audience", AUDIENCE] : []),
+      ...(FORMAT === "promo" || FORMAT === "reel" ? [] : ["--lang", LANG]),
       // A promo is chosen from the bank by rotation, so a slug means nothing
       // to it; passing one through would be silently ignored.
       ...(SLUG_ARG && FORMAT !== "promo" ? [SLUG_ARG] : []),
@@ -126,7 +134,9 @@ async function main() {
   if (!manifests.length) fail("generator produced no manifest.json");
 
   const manifest = JSON.parse(fs.readFileSync(manifests[0].p, "utf8"));
-  const slotKey = `${istDateString()}-${SLOT}`;
+  // The language is part of the key: an English carousel and a Hindi one on
+  // the same day are two different posts, not a duplicate of one.
+  const slotKey = `${istDateString()}-${SLOT}${LANG === "en" ? "-en" : ""}`;
 
   if (alreadyPosted(slotKey)) {
     log(`${slotKey} already posted — nothing to do`);
@@ -166,7 +176,7 @@ async function main() {
 
   // Facebook failing must not lose the Instagram post that already succeeded,
   // so it is recorded before the Page call and the error is reported after.
-  record({ slotKey, slug: manifest.slug, format: FORMAT, instagram: igId, network: "instagram" });
+  record({ slotKey, slug: manifest.slug, format: FORMAT, lang: manifest.lang ?? LANG, instagram: igId, network: "instagram" });
 
   let fbId = null;
   try {
@@ -174,7 +184,7 @@ async function main() {
       ? await postVideo({ videoUrl: imageUrls[0], caption: fbCaption })
       : await postPhotoSet({ imageUrls, caption: fbCaption });
     log(`facebook published ${fbId}`);
-    record({ slotKey: slotKey + "-fb", slug: manifest.slug, format: FORMAT, facebook: fbId, network: "facebook" });
+    record({ slotKey: slotKey + "-fb", slug: manifest.slug, format: FORMAT, lang: manifest.lang ?? LANG, facebook: fbId, network: "facebook" });
   } catch (err) {
     console.error(`[${SLOT}] facebook failed after Instagram succeeded: ${err.message}`);
     process.exitCode = 1;

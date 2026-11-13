@@ -26,16 +26,17 @@ function need(name) {
   return v;
 }
 
-async function fetchCarousel(slug, format) {
+async function fetchCarousel(slug, format, lang) {
   const base = process.env.SITE_URL || "https://www.jobs24india.com";
   const url = new URL("/api/social/blog", base);
   url.searchParams.set("format", format);
+  url.searchParams.set("lang", lang);
   if (slug) url.searchParams.set("slug", slug);
   else {
     // The rotation's memory lives in state/posted.json, not on the server, and
     // is kept per format: an article already used as a carousel is still
     // available as a one-pager, which is where the extra runway comes from.
-    const posted = loadPostedSlugs(format);
+    const posted = loadPostedSlugs(format, lang);
     if (posted.length) url.searchParams.set("exclude", posted.join(","));
   }
 
@@ -47,14 +48,19 @@ async function fetchCarousel(slug, format) {
   return body;
 }
 
-function loadPostedSlugs(format) {
+function loadPostedSlugs(format, lang) {
   const p = path.join(ROOT, "state", "posted.json");
   if (!fs.existsSync(p)) return [];
   try {
     const rows = JSON.parse(fs.readFileSync(p, "utf8")).filter(r => r.slug);
     // Rows written before formats existed have no `format` and were all
     // carousels; treating them as such keeps the first rotation honest.
-    const seen = rows.filter(r => (r.format ?? "carousel") === format).map(r => r.slug);
+    // Rows predating either field were Hindi carousels, which is what the
+    // defaults encode. The two languages rotate separately: the same article
+    // can run in Hindi and later in English without repeating itself.
+    const seen = rows
+      .filter(r => (r.format ?? "carousel") === format && (r.lang ?? "hi") === lang)
+      .map(r => r.slug);
     return [...new Set(seen)];
   } catch {
     return [];
@@ -273,10 +279,19 @@ async function main() {
   // Skip the value that belongs to --format, but only when --format was given:
   // with fmtIdx === -1 the guard would drop argv[0], which is the slug, and
   // the run would quietly render a different article than the one asked for.
-  const formatValueIdx = fmtIdx === -1 ? -1 : fmtIdx + 1;
-  const slugArg = args.filter((a, i) => !a.startsWith("--") && i !== formatValueIdx)[0];
+  const langIdx = args.indexOf("--lang");
+  const lang = langIdx === -1 ? "hi" : args[langIdx + 1];
+  if (lang !== "hi" && lang !== "en") {
+    throw new Error(`--lang must be "hi" or "en", got "${lang}"`);
+  }
 
-  const payload = await fetchCarousel(slugArg, format);
+  const formatValueIdx = fmtIdx === -1 ? -1 : fmtIdx + 1;
+  const langValueIdx = langIdx === -1 ? -1 : langIdx + 1;
+  const slugArg = args.filter(
+    (a, i) => !a.startsWith("--") && i !== formatValueIdx && i !== langValueIdx,
+  )[0];
+
+  const payload = await fetchCarousel(slugArg, format, lang);
 
   if (!payload.ready) {
     console.log(`[generate] nothing to post — ${payload.skipReason}`);
@@ -290,7 +305,13 @@ async function main() {
   const { carousel } = payload;
   // One-pagers and carousels of the same article must not overwrite each
   // other's PNGs, so the format is part of the path.
-  const outDir = path.join(ROOT, "content", format === "onepager" ? `${carousel.slug}-onepager` : carousel.slug);
+  // Format and language both go in the path. One article can be a Hindi
+  // carousel, an English carousel and a one-pager at once, and none of them
+  // may overwrite the PNGs of another.
+  const suffix = [format === "onepager" ? "onepager" : null, lang === "en" ? "en" : null]
+    .filter(Boolean)
+    .join("-");
+  const outDir = path.join(ROOT, "content", suffix ? `${carousel.slug}-${suffix}` : carousel.slug);
   fs.mkdirSync(outDir, { recursive: true });
 
   const browser = await chromium.launch();
@@ -310,7 +331,11 @@ async function main() {
 
       await page.goto("file://" + CARD.replace(/\\/g, "/"), { waitUntil: "load" });
       await page.evaluate(() => document.fonts.ready);
-      await assertDevanagari(page);
+      // Only Hindi cards need the Devanagari guarantee. Requiring it for an
+      // English card means a card with no Devanagari on it fails because of a
+      // font it never uses — which is exactly what happened the first time an
+      // English carousel was generated.
+      if (lang === "hi") await assertDevanagari(page);
       await assertNoOverflow(page, `slide ${i + 1}`);
 
       const file = path.join(outDir, String(i + 1).padStart(2, "0") + ".png");
@@ -327,6 +352,7 @@ async function main() {
   const manifest = {
     slug: carousel.slug,
     format,
+    lang,
     title: carousel.title,
     tag: carousel.tag,
     url: carousel.url,
