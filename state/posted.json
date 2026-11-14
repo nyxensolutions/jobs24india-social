@@ -12,5 +12,23 @@
     "facebook": "1371935239337381_122145261195468144",
     "network": "facebook",
     "at": "2026-11-13T13:56:15.210Z"
+  },
+  {
+    "slotKey": "2026-11-14-promo",
+    "slug": "seek-free",
+    "format": "promo",
+    "lang": "hi",
+    "instagram": "18117769625117574",
+    "network": "instagram",
+    "at": "2026-11-14T13:46:08.026Z"
+  },
+  {
+    "slotKey": "2026-11-14-promo-fb",
+    "slug": "seek-free",
+    "format": "promo",
+    "lang": "hi",
+    "facebook": "1371935239337381_122145732591468144",
+    "network": "facebook",
+    "at": "2026-11-14T13:46:14.097Z"
   }
 ]
