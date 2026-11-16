@@ -30,5 +30,23 @@
     "facebook": "1371935239337381_122145732591468144",
     "network": "facebook",
     "at": "2026-11-14T13:46:14.097Z"
+  },
+  {
+    "slotKey": "2026-11-16-blog-carousel",
+    "slug": "telecaller-job-description-salary-skills",
+    "format": "carousel",
+    "lang": "hi",
+    "instagram": "17944117233389776",
+    "network": "instagram",
+    "at": "2026-11-16T13:54:55.123Z"
+  },
+  {
+    "slotKey": "2026-11-16-blog-carousel-fb",
+    "slug": "telecaller-job-description-salary-skills",
+    "format": "carousel",
+    "lang": "hi",
+    "facebook": "1371935239337381_122146465719468144",
+    "network": "facebook",
+    "at": "2026-11-16T13:55:10.178Z"
   }
 ]
