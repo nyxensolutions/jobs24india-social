@@ -66,5 +66,23 @@
     "facebook": "1371935239337381_122146895901468144",
     "network": "facebook",
     "at": "2026-11-17T21:52:10.969Z"
+  },
+  {
+    "slotKey": "2026-11-18-blog-carousel",
+    "slug": "delivery-boy-salary-in-india",
+    "format": "carousel",
+    "lang": "hi",
+    "instagram": "18098914556130562",
+    "network": "instagram",
+    "at": "2026-11-18T14:29:14.792Z"
+  },
+  {
+    "slotKey": "2026-11-18-blog-carousel-fb",
+    "slug": "delivery-boy-salary-in-india",
+    "format": "carousel",
+    "lang": "hi",
+    "facebook": "1371935239337381_122147079987468144",
+    "network": "facebook",
+    "at": "2026-11-18T14:29:32.353Z"
   }
 ]
