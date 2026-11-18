@@ -84,5 +84,23 @@
     "facebook": "1371935239337381_122147079987468144",
     "network": "facebook",
     "at": "2026-11-18T14:29:32.353Z"
+  },
+  {
+    "slotKey": "2026-11-18-promo",
+    "slug": "emp-post-free",
+    "format": "promo",
+    "lang": "en",
+    "instagram": "18498768391104789",
+    "network": "instagram",
+    "at": "2026-11-18T15:54:58.710Z"
+  },
+  {
+    "slotKey": "2026-11-18-promo-fb",
+    "slug": "emp-post-free",
+    "format": "promo",
+    "lang": "en",
+    "facebook": "1371935239337381_122147098911468144",
+    "network": "facebook",
+    "at": "2026-11-18T15:55:06.597Z"
   }
 ]
