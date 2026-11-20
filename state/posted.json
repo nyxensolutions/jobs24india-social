@@ -138,5 +138,23 @@
     "facebook": "1371935239337381_122147494917468144",
     "network": "facebook",
     "at": "2026-11-19T21:43:30.242Z"
+  },
+  {
+    "slotKey": "2026-11-20-blog-carousel",
+    "slug": "delivery-boy-salary-in-ghaziabad",
+    "format": "carousel",
+    "lang": "hi",
+    "instagram": "17971639581195363",
+    "network": "instagram",
+    "at": "2026-11-20T14:14:29.716Z"
+  },
+  {
+    "slotKey": "2026-11-20-blog-carousel-fb",
+    "slug": "delivery-boy-salary-in-ghaziabad",
+    "format": "carousel",
+    "lang": "hi",
+    "facebook": "1371935239337381_122147706483468144",
+    "network": "facebook",
+    "at": "2026-11-20T14:14:40.838Z"
   }
 ]
