@@ -156,5 +156,23 @@
     "facebook": "1371935239337381_122147706483468144",
     "network": "facebook",
     "at": "2026-11-20T14:14:40.838Z"
+  },
+  {
+    "slotKey": "2026-11-21-promo",
+    "slug": "seek-no-fee-warning",
+    "format": "promo",
+    "lang": "hi",
+    "instagram": "18127353922921402",
+    "network": "instagram",
+    "at": "2026-11-21T14:53:23.295Z"
+  },
+  {
+    "slotKey": "2026-11-21-promo-fb",
+    "slug": "seek-no-fee-warning",
+    "format": "promo",
+    "lang": "hi",
+    "facebook": "1371935239337381_122148078405468144",
+    "network": "facebook",
+    "at": "2026-11-21T14:53:30.792Z"
   }
 ]
