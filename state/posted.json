@@ -230,5 +230,23 @@
     "facebook": "1371935239337381_122149079103468144",
     "network": "facebook",
     "at": "2026-11-24T23:13:01.861Z"
+  },
+  {
+    "slotKey": "2026-11-25-blog-carousel",
+    "slug": "warehouse-jobs-in-greater-noida",
+    "format": "carousel",
+    "lang": "hi",
+    "instagram": "17990724417087807",
+    "network": "instagram",
+    "at": "2026-11-25T15:54:30.855Z"
+  },
+  {
+    "slotKey": "2026-11-25-blog-carousel-fb",
+    "slug": "warehouse-jobs-in-greater-noida",
+    "format": "carousel",
+    "lang": "hi",
+    "facebook": "1371935239337381_122149264845468144",
+    "network": "facebook",
+    "at": "2026-11-25T15:54:41.498Z"
   }
 ]
