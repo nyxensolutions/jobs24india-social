@@ -248,5 +248,23 @@
     "facebook": "1371935239337381_122149264845468144",
     "network": "facebook",
     "at": "2026-11-25T15:54:41.498Z"
+  },
+  {
+    "slotKey": "2026-11-25-promo",
+    "slug": "emp-blue-collar",
+    "format": "promo",
+    "lang": "en",
+    "instagram": "18428358184158630",
+    "network": "instagram",
+    "at": "2026-11-25T17:31:22.905Z"
+  },
+  {
+    "slotKey": "2026-11-25-promo-fb",
+    "slug": "emp-blue-collar",
+    "format": "promo",
+    "lang": "en",
+    "facebook": "1371935239337381_122149283661468144",
+    "network": "facebook",
+    "at": "2026-11-25T17:31:28.390Z"
   }
 ]
