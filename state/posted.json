@@ -302,5 +302,23 @@
     "facebook": "1371935239337381_122149601739468144",
     "network": "facebook",
     "at": "2026-11-26T22:30:40.149Z"
+  },
+  {
+    "slotKey": "2026-11-27-blog-carousel",
+    "slug": "resume-for-freshers-without-experience",
+    "format": "carousel",
+    "lang": "hi",
+    "instagram": "18057017336817146",
+    "network": "instagram",
+    "at": "2026-11-27T15:26:29.917Z"
+  },
+  {
+    "slotKey": "2026-11-27-blog-carousel-fb",
+    "slug": "resume-for-freshers-without-experience",
+    "format": "carousel",
+    "lang": "hi",
+    "facebook": "1371935239337381_122149784547468144",
+    "network": "facebook",
+    "at": "2026-11-27T15:26:39.460Z"
   }
 ]
